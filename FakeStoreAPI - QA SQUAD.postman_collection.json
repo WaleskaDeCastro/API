@@ -1,0 +1,414 @@
+{
+  "info": {
+    "_postman_id": "96500111-b65e-4f2d-9adb-5377fc8b7679",
+    "name": "FakeStoreAPI - QA SQUAD",
+    "description": "Demonstra consultas e operações de usuários e carrinhos. Execute primeiro \"01 - Testes principais\". As pastas 02 e 03 são testes extras. A API é de demonstração e pode não salvar alterações. A resposta da lista de usuários pode incluir senhas; evite compartilhar os dados brutos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "50957786",
+    "_collection_link": "https://go.postman.co/collection/50957786-96500111-b65e-4f2d-9adb-5377fc8b7679?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - Happy path",
+      "item": [
+        {
+          "name": "[GET] all users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status da resposta e 200\", function () { pm.response.to.have.status(200); });\npm.test(\"Resposta tem Content-Type JSON\", function () { pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/i); });\npm.test(\"Resposta corresponde ao schema documentado de usu?rios\", function () {\n    const users = pm.response.json();\n    pm.expect(users).to.be.an(\"array\");\n    users.forEach(function (user) {\n        pm.expect(user).to.be.an(\"object\");\n        pm.expect(user, \"Usuario.id obrigatorio\").to.have.property(\"id\");\n        pm.expect(user.id, \"Usuario.id deve ser inteiro\").to.be.a(\"number\");\n        pm.expect(Number.isInteger(user.id), \"Usuario.id deve ser inteiro\").to.eql(true);\n        [\"username\", \"email\", \"password\"].forEach(function (field) {\n            pm.expect(user, \"Usuario.\" + field + \" obrigatorio\").to.have.property(field);\n            pm.expect(user[field], \"Usuario.\" + field + \" deve ser string\").to.be.a(\"string\");\n        });\n    });\n    const displayUsers = users.map(function (user) { return { id: user.id, username: user.username, email: user.email }; });\n    pm.visualizer.set(\"<h3>Usu?rios retornados: {{count}}</h3><p>Campos exibidos: ID, username e e-mail. Campos de credencial foram omitidos.</p><table><thead><tr><th>ID</th><th>Usu?rio</th><th>E-mail</th></tr></thead><tbody>{{#each users}}<tr><td>{{id}}</td><td>{{username}}</td><td>{{email}}</td></tr>{{/each}}</tbody></table>\", { count: displayUsers.length, users: displayUsers });\n});\npm.test(\"Verificacao adicional: IDs dos usuarios sao unicos\", function () {\n    const users = pm.response.json();\n    const ids = users.map(function (user) { return user.id; });\n    pm.expect(new Set(ids).size).to.eql(ids.length);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Confere status 200, Content-Type JSON e todos os campos obrigat?rios do schema documentado de usu?rios. Campos adicionais s?o permitidos. A visualiza??o mostra apenas ID, usu?rio e e-mail."
+          },
+          "response": []
+        },
+        {
+          "name": "[POST] login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login válido responde status 201\", function () { pm.response.to.have.status(201); });\npm.test(\"Content-Type da resposta é JSON\", function () { pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/i); });\npm.test(\"Resposta contém token como string não vazia\", function () {\n    const body = pm.response.json();\n    pm.expect(body).to.be.an(\"object\");\n    pm.expect(body.token).to.be.a(\"string\").that.is.not.empty;\n    pm.visualizer.set(\"<h3>Login respondido</h3><p>Status observado: {{status}}</p><p>Status esperado no teste extra: 200</p><p>Campo token presente: {{tokenPresent}}</p><p>O valor do token não foi exibido nem salvo. A validade não foi testada.</p>\", { status: pm.response.code, tokenPresent: body.token ? \"Sim\" : \"Não\" });\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johnd\",\n  \"password\": \"m38rmF$\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Envia credenciais válidas e confere resposta com status 201. A resposta contém um token, mas a coleção não o exibe nem confirma que pode ser usado."
+          },
+          "response": []
+        },
+        {
+          "name": "[GET] all carts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status da resposta e 200\", function () { pm.response.to.have.status(200); });\npm.test(\"Resposta tem Content-Type JSON\", function () { pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/i); });\npm.test(\"Resposta corresponde ao schema documentado de carrinhos\", function () {\n    const carts = pm.response.json();\n    pm.expect(carts).to.be.an(\"array\");\n    carts.forEach(function (cart) {\n        pm.expect(cart).to.be.an(\"object\");\n        [\"id\", \"userId\"].forEach(function (field) {\n            pm.expect(cart, \"Carrinho.\" + field + \" obrigatorio\").to.have.property(field);\n            pm.expect(cart[field], \"Carrinho.\" + field + \" deve ser inteiro\").to.be.a(\"number\");\n            pm.expect(Number.isInteger(cart[field]), \"Carrinho.\" + field + \" deve ser inteiro\").to.eql(true);\n        });\n        pm.expect(cart, \"Carrinho.products obrigatorio\").to.have.property(\"products\");\n        pm.expect(cart.products, \"Carrinho.products deve ser array\").to.be.an(\"array\");\n        cart.products.forEach(function (product) {\n            pm.expect(product).to.be.an(\"object\");\n            pm.expect(product, \"Produto.id obrigatorio\").to.have.property(\"id\");\n            pm.expect(product.id, \"Produto.id deve ser inteiro\").to.be.a(\"number\");\n            pm.expect(Number.isInteger(product.id), \"Produto.id deve ser inteiro\").to.eql(true);\n            [\"title\", \"description\", \"category\", \"image\"].forEach(function (field) {\n                pm.expect(product, \"Produto.\" + field + \" obrigatorio\").to.have.property(field);\n                pm.expect(product[field], \"Produto.\" + field + \" deve ser string\").to.be.a(\"string\");\n            });\n            pm.expect(product, \"Produto.price obrigatorio\").to.have.property(\"price\");\n            pm.expect(product.price, \"Produto.price deve ser numero\").to.be.a(\"number\");\n        });\n    });\n    const summary = carts.map(function (cart) {\n        return {\n            id: cart.id,\n            userId: cart.userId,\n            date: cart.date || \"(n?o informado)\",\n            productsCount: cart.products.length,\n            productFields: cart.products.length ? Object.keys(cart.products[0]).join(\", \") : \"(sem itens)\"\n        };\n    });\n    pm.visualizer.set(\"<h3>Carrinhos retornados: {{count}}</h3><p>Campos exibidos conforme os dados retornados.</p><table><thead><tr><th>ID</th><th>Usu?rio</th><th>Data (campo adicional)</th><th>Qtd. produtos</th><th>Campos do produto</th></tr></thead><tbody>{{#each carts}}<tr><td>{{id}}</td><td>{{userId}}</td><td>{{date}}</td><td>{{productsCount}}</td><td>{{productFields}}</td></tr>{{/each}}</tbody></table>\", { count: summary.length, carts: summary });\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/carts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "carts"
+              ]
+            },
+            "description": "Confere status 200, Content-Type JSON e todos os campos obrigat?rios do schema documentado de carrinhos e produtos. Campos adicionais s?o permitidos."
+          },
+          "response": []
+        },
+        {
+          "name": "[DELETE] a user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status da resposta e 200\", function () { pm.response.to.have.status(200); });\npm.test(\"Visualização segura: registrar somente presença do corpo\", function () {\n    const hasBody = pm.response.text().trim().length > 0;\n    pm.visualizer.set(\"<h3>DELETE /users/1</h3><p>Status: {{status}}</p><p>Corpo retornado pela implementação: {{bodyPresent}}</p><p>Os dados retornados foram omitidos da visualização.</p>\", { status: pm.response.code, bodyPresent: hasBody ? \"Sim (não documentado)\" : \"Não\" });\n    pm.expect(pm.response.code).to.eql(200);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
+            },
+            "description": "Envia a solicitação para excluir o usuário de ID 1 e confere status 200. Os dados retornados não são exibidos. A API pode apenas simular a exclusão."
+          },
+          "response": []
+        }
+      ],
+      "description": "Execute nesta ordem: listar usuários, fazer login, listar carrinhos e excluir usuário. A visualização da lista de usuários omite senhas. A exclusão pode ser simulada e não garante que o usuário seja removido permanentemente."
+    },
+    {
+      "name": "02 - Negative testing",
+      "item": [
+        {
+          "name": "Login incorrect password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime: credenciais inválidas retornam 401\", function () { pm.response.to.have.status(401); });\npm.test(\"Runtime: corpo de erro não está vazio e não contém token\", function () {\n    const body = pm.response.text();\n    pm.expect(body).to.not.be.empty;\n    pm.expect(body).to.not.match(/\"token\"\\s*:/i);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johnd\",\n  \"password\": \"senha-intencionalmente-invalida\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Confere se a API retorna status 401 e uma mensagem de erro quando a senha está incorreta."
+          },
+          "response": []
+        },
+        {
+          "name": "Login no password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime: requisição sem password retorna 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johnd\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Envia o login sem informar a senha e confere status 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Login invalid JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Runtime: JSON malformado retorna 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ username: johnd }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Envia um JSON inválido e confere status 400."
+          },
+          "response": []
+        },
+        {
+          "name": "[DELETE] invalid user  ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"ID inválido retorna status 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "abc"
+              ]
+            },
+            "description": "Envia um ID que não é numérico e confere status 400."
+          },
+          "response": []
+        }
+      ],
+      "description": "Mostra como a API responde a dados de login incorretos ou a um ID inválido. Execute esta pasta separadamente dos testes principais."
+    },
+    {
+      "name": "03 - Extra test: login status",
+      "item": [
+        {
+          "name": "Login valid: check status 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login válido retorna status 200\", function () { pm.response.to.have.status(200); });\r\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johnd\",\n  \"password\": \"m38rmF$\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Confere se o login retorna status 200. A API atualmente retorna 201, então este teste fica reprovado."
+          },
+          "response": []
+        }
+      ],
+      "description": "Este teste verifica se o login retorna status 200. Atualmente, a API responde 201, por isso o teste falha. Execute apenas se quiser demonstrar essa diferença."
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://fakestoreapi.com"
+    }
+  ]
+}
